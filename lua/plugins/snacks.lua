@@ -8,7 +8,7 @@ return {
         end,
       },
       sections = {
-        { section = "terminal", cmd = "fortune -s | cowsay", hl = "header", height = 11, padding = 1, indent = 8 },
+        { section = "terminal", cmd = "fortune -s | cowsay", hl = "header", height = 15, padding = 1, indent = 8 },
         { section = "keys", gap = 1, padding = 1 },
         { section = "startup" },
         -- {
