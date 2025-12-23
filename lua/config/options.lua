@@ -13,7 +13,7 @@
 --     ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
 --   },
 -- }
-vim.g.lazyvim_picker = "telescope"
+vim.g.lazyvim_picker = "snacks"
 
 if vim.env.TMUX ~= nil then
   local copy = { "tmux", "load-buffer", "-w", "-" }
