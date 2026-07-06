@@ -7,8 +7,8 @@ M.glitch = function()
     { stage_length = 20, mode = "static" },
     { stage_length = 8, frame_start = 7, mode = "backward" },
   }
-  local original = require("global.ui.ascii_arts").Tokamak.original
-  local frames = require("global.ui.ascii_arts").Tokamak.glitch
+  local original = require("config.ui.ascii_arts").Tokamak.original
+  local frames = require("config.ui.ascii_arts").Tokamak.glitch
   local curr_stage = 1
   local counter = 0
 

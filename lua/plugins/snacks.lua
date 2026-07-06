@@ -1,163 +1,120 @@
-return {
-  {
-    "snacks.nvim",
-    opts = {
-      dashboard = {
-        formats = {
-          key = function(item)
-            return { { "[", hl = "special" }, { item.key, hl = "key" }, { "]", hl = "special" } }
-          end,
-        },
-        sections = {
-          { section = "terminal", cmd = "fortune -s | cowsay", hl = "header", height = 15, padding = 1, indent = 8 },
-          { section = "keys", gap = 1, padding = 1 },
-          { section = "startup" },
-          -- {
-          --   section = "terminal",
-          --   cmd = "pokemon-colorscripts -b -r --no-title",
-          --   hl = "header",
-          --   height = 35,
-          --   indent = 4,
-          --   pane = 2,
-          --   random = 10,
-          -- },
-        },
-      },
+---@module "snacks"
+
+local dashboard = {
+  glitch = nil,
+  timer_id = nil,
+}
+
+function dashboard.calc_logo_width(logo)
+  local lines = vim.split(logo, "\n", { plain = true })
+  local width = 0
+  for _, line in ipairs(lines) do
+    width = math.max(width, vim.api.nvim_strwidth(line))
+  end
+  return width
+end
+
+dashboard.logo = require("config.ui.ascii_arts").Tokamak.original
+dashboard.logo_width = dashboard.calc_logo_width(dashboard.logo)
+
+function dashboard.header()
+  return {
+    text = {
+      { dashboard.logo, hl = "SnacksDashboardLogo", width = dashboard.logo_width },
     },
+    align = "center",
+    padding = 3,
+  }
+end
+
+function dashboard.stop_timer()
+  if dashboard.timer_id ~= nil then
+    vim.fn.timer_stop(dashboard.timer_id)
+    dashboard.timer_id = nil
+  end
+end
+
+function dashboard.start_timer()
+  dashboard.glitch = dashboard.glitch or require("config.ui.animation").glitch()
+  dashboard.stop_timer()
+  dashboard.timer_id = vim.fn.timer_start(32, function()
+    local logo, color = dashboard.glitch()
+    if color == 0 then
+      vim.api.nvim_set_hl(0, "SnacksDashboardLogo", { fg = "#30D7FF" })
+    elseif color == 1 then
+      vim.api.nvim_set_hl(0, "SnacksDashboardLogo", { fg = "#FFC060" })
+    else
+      vim.api.nvim_set_hl(0, "SnacksDashboardLogo", { fg = "#3000FF" })
+    end
+    dashboard.logo = logo
+    dashboard.logo_width = dashboard.calc_logo_width(logo)
+    vim.api.nvim_exec_autocmds("User", { pattern = "SnacksDashboardUpdate", modeline = false })
+  end, { ["repeat"] = -1 })
+end
+
+local dashboard_config = {
+  enabled = true,
+  width = 60,
+  sections = {
+    dashboard.header,
+    { section = "keys", gap = 1, padding = 4 },
+    { section = "startup", icon = "  " },
   },
-  -- lazy.nvim
-  {
-    "folke/snacks.nvim",
-    ---@type snacks.Config
-    opts = {
-      image = {
-        ---@class snacks.image.Config
-        ---@field enabled? boolean enable image viewer
-        ---@field wo? vim.wo|{} options for windows showing the image
-        ---@field bo? vim.bo|{} options for the image buffer
-        ---@field formats? string[]
-        --- Resolves a reference to an image with src in a file (currently markdown only).
-        --- Return the absolute path or url to the image.
-        --- When `nil`, the path is resolved relative to the file.
-        ---@field resolve? fun(file: string, src: string): string?
-        ---@field convert? snacks.image.convert.Config
-        enabled = true,
-        formats = {
-          "png",
-          "jpg",
-          "jpeg",
-          "gif",
-          "bmp",
-          "webp",
-          "tiff",
-          "heic",
-          "avif",
-          "mp4",
-          "mov",
-          "avi",
-          "mkv",
-          "webm",
-          "pdf",
-          "icns",
-        },
-        force = false, -- try displaying the image, even if the terminal does not support it
-        doc = {
-          -- enable image viewer for documents
-          -- a treesitter parser must be available for the enabled languages.
-          enabled = true,
-          -- render the image inline in the buffer
-          -- if your env doesn't support unicode placeholders, this will be disabled
-          -- takes precedence over `opts.float` on supported terminals
-          inline = false,
-          -- render the image in a floating window
-          -- only used if `opts.inline` is disabled
-          float = true,
-          max_width = 80,
-          max_height = 40,
-          -- Set to `true`, to conceal the image text when rendering inline.
-          -- (experimental)
-          ---@param lang string tree-sitter language
-          ---@param type snacks.image.Type image type
-          -- conceal = function(lang, type)
-          --   -- only conceal math expressions
-          --   return type == "math"
-          -- end,
-        },
-        img_dirs = { "img", "images", "assets", "static", "public", "media", "attachments" },
-        -- window options applied to windows displaying image buffers
-        -- an image buffer is a buffer with `filetype=image`
-        wo = {
-          wrap = false,
-          number = false,
-          relativenumber = false,
-          cursorcolumn = false,
-          signcolumn = "no",
-          foldcolumn = "0",
-          list = false,
-          spell = false,
-          statuscolumn = "",
-        },
-        cache = vim.fn.stdpath("cache") .. "/snacks/image",
-        debug = {
-          request = false,
-          convert = false,
-          placement = false,
-        },
-        env = {},
-        -- icons used to show where an inline image is located that is
-        -- rendered below the text.
-        icons = {
-          math = "󰪚 ",
-          chart = "󰄧 ",
-          image = " ",
-        },
-        ---@class snacks.image.convert.Config
-        convert = {
-          notify = false, -- show a notification on error
-          ---@type snacks.image.args
-          mermaid = function()
-            local theme = vim.o.background == "light" and "neutral" or "dark"
-            return { "-i", "{src}", "-o", "{file}", "-b", "transparent", "-t", theme, "-s", "{scale}" }
-          end,
-          ---@type table<string,snacks.image.args>
-          magick = {
-            default = { "{src}[0]", "-scale", "1920x1080>" }, -- default for raster images
-            vector = { "-density", 192, "{src}[{page}]" }, -- used by vector images like svg
-            math = { "-density", 192, "{src}[{page}]", "-trim" },
-            pdf = { "-density", 192, "{src}[{page}]", "-background", "white", "-alpha", "remove", "-trim" },
-          },
-        },
-        math = {
-          enabled = true, -- enable math expression rendering
-          -- in the templates below, `${header}` comes from any section in your document,
-          -- between a start/end header comment. Comment syntax is language-specific.
-          -- * start comment: `// snacks: header start`
-          -- * end comment:   `// snacks: header end`
-          typst = {
-            tpl = [[
-        #set page(width: auto, height: auto, margin: (x: 2pt, y: 2pt))
-        #show math.equation.where(block: false): set text(top-edge: "bounds", bottom-edge: "bounds")
-        #set text(size: 12pt, fill: rgb("${color}"))
-        ${header}
-        ${content}]],
-          },
-          latex = {
-            font_size = "Large", -- see https://www.sascha-frank.com/latex-font-size.html
-            -- for latex documents, the doc packages are included automatically,
-            -- but you can add more packages here. Useful for markdown documents.
-            packages = { "amsmath", "amssymb", "amsfonts", "amscd", "mathtools" },
-            tpl = [[
-        \documentclass[preview,border=0pt,varwidth,12pt]{standalone}
-        \usepackage{${packages}}
-        \begin{document}
-        ${header}
-        { \${font_size} \selectfont
-          \color[HTML]{${color}}
-        ${content}}
-        \end{document}]],
-          },
-        },
-      },
+}
+
+local function patch_zen_bufwinenter(win)
+  local original_on = win.on
+
+  win.on = function(self, event, cb, opts)
+    if event == "BufWinEnter" then
+      local original_cb = cb
+
+      cb = function(...)
+        local ok, ret = pcall(original_cb, ...)
+        if ok then
+          return ret
+        end
+
+        local err = tostring(ret)
+        if err:find("snacks/zen.lua", 1, true) and err:find("Invalid buffer id", 1, true) then
+          return
+        end
+
+        error(ret)
+      end
+    end
+
+    return original_on(self, event, cb, opts)
+  end
+end
+
+return {
+  "folke/snacks.nvim",
+  priority = 1000,
+  lazy = false,
+  init = function()
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "SnacksDashboardOpened",
+      callback = dashboard.start_timer,
+    })
+
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "SnacksDashboardClosed",
+      callback = dashboard.stop_timer,
+    })
+  end,
+  ---@type snacks.Config
+  opts = {
+    animate = { enabled = false },
+    dashboard = dashboard_config,
+    scroll = { enabled = false },
+    indent = { enabled = true },
+    notifier = { enabled = true },
+    scope = { enabled = true },
+    words = { enabled = true },
+    terminal = { enabled = true },
+    zen = {
+      on_open = patch_zen_bufwinenter,
     },
   },
 }
