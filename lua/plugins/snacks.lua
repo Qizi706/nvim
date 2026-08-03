@@ -3,6 +3,7 @@
 local dashboard = {
   glitch = nil,
   timer_id = nil,
+  nvim_focused = true,
 }
 
 function dashboard.calc_logo_width(logo)
@@ -34,9 +35,22 @@ function dashboard.stop_timer()
   end
 end
 
+function dashboard.is_focused()
+  local win = vim.api.nvim_get_current_win()
+  if not vim.api.nvim_win_is_valid(win) then
+    return false
+  end
+
+  local buf = vim.api.nvim_win_get_buf(win)
+  return vim.bo[buf].filetype == "snacks_dashboard"
+end
+
 function dashboard.start_timer()
+  if dashboard.timer_id ~= nil then
+    return
+  end
+
   dashboard.glitch = dashboard.glitch or require("config.ui.animation").glitch()
-  dashboard.stop_timer()
   dashboard.timer_id = vim.fn.timer_start(32, function()
     local logo, color = dashboard.glitch()
     if color == 0 then
@@ -50,6 +64,14 @@ function dashboard.start_timer()
     dashboard.logo_width = dashboard.calc_logo_width(logo)
     vim.api.nvim_exec_autocmds("User", { pattern = "SnacksDashboardUpdate", modeline = false })
   end, { ["repeat"] = -1 })
+end
+
+function dashboard.update_timer()
+  if dashboard.nvim_focused and dashboard.is_focused() then
+    dashboard.start_timer()
+  else
+    dashboard.stop_timer()
+  end
 end
 
 local dashboard_config = {
@@ -95,12 +117,30 @@ return {
   init = function()
     vim.api.nvim_create_autocmd("User", {
       pattern = "SnacksDashboardOpened",
-      callback = dashboard.start_timer,
+      callback = dashboard.update_timer,
     })
 
     vim.api.nvim_create_autocmd("User", {
       pattern = "SnacksDashboardClosed",
       callback = dashboard.stop_timer,
+    })
+
+    vim.api.nvim_create_autocmd({ "WinEnter", "BufWinEnter", "WinLeave", "BufWinLeave" }, {
+      callback = vim.schedule_wrap(dashboard.update_timer),
+    })
+
+    vim.api.nvim_create_autocmd("FocusGained", {
+      callback = function()
+        dashboard.nvim_focused = true
+        dashboard.update_timer()
+      end,
+    })
+
+    vim.api.nvim_create_autocmd("FocusLost", {
+      callback = function()
+        dashboard.nvim_focused = false
+        dashboard.stop_timer()
+      end,
     })
   end,
   ---@type snacks.Config
