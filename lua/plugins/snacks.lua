@@ -4,6 +4,7 @@ local dashboard = {
   glitch = nil,
   timer_id = nil,
   nvim_focused = true,
+  logo_color = nil,
 }
 
 function dashboard.calc_logo_width(logo)
@@ -53,16 +54,37 @@ function dashboard.start_timer()
   dashboard.glitch = dashboard.glitch or require("config.ui.animation").glitch()
   dashboard.timer_id = vim.fn.timer_start(32, function()
     local logo, color = dashboard.glitch()
-    if color == 0 then
-      vim.api.nvim_set_hl(0, "SnacksDashboardLogo", { fg = "#30D7FF" })
-    elseif color == 1 then
-      vim.api.nvim_set_hl(0, "SnacksDashboardLogo", { fg = "#FFC060" })
-    else
-      vim.api.nvim_set_hl(0, "SnacksDashboardLogo", { fg = "#3000FF" })
+
+    local logo_changed = logo ~= dashboard.logo
+    local color_changed = color ~= dashboard.logo_color
+
+    -- 静止帧不再触发重绘
+    if not logo_changed and not color_changed then
+      return
     end
-    dashboard.logo = logo
-    dashboard.logo_width = dashboard.calc_logo_width(logo)
-    vim.api.nvim_exec_autocmds("User", { pattern = "SnacksDashboardUpdate", modeline = false })
+
+    if color_changed then
+      local colors = {
+        [0] = "#30D7FF",
+        [1] = "#FFC060",
+        [2] = "#3000FF",
+      }
+
+      vim.api.nvim_set_hl(0, "SnacksDashboardLogo", {
+        fg = colors[color],
+      })
+      dashboard.logo_color = color
+    end
+
+    if logo_changed then
+      dashboard.logo = logo
+      dashboard.logo_width = dashboard.calc_logo_width(logo)
+    end
+
+    vim.api.nvim_exec_autocmds("User", {
+      pattern = "SnacksDashboardUpdate",
+      modeline = false,
+    })
   end, { ["repeat"] = -1 })
 end
 
@@ -83,32 +105,6 @@ local dashboard_config = {
     { section = "startup", icon = "  " },
   },
 }
-
-local function patch_zen_bufwinenter(win)
-  local original_on = win.on
-
-  win.on = function(self, event, cb, opts)
-    if event == "BufWinEnter" then
-      local original_cb = cb
-
-      cb = function(...)
-        local ok, ret = pcall(original_cb, ...)
-        if ok then
-          return ret
-        end
-
-        local err = tostring(ret)
-        if err:find("snacks/zen.lua", 1, true) and err:find("Invalid buffer id", 1, true) then
-          return
-        end
-
-        error(ret)
-      end
-    end
-
-    return original_on(self, event, cb, opts)
-  end
-end
 
 return {
   "folke/snacks.nvim",
@@ -153,8 +149,5 @@ return {
     scope = { enabled = true },
     words = { enabled = true },
     terminal = { enabled = true },
-    zen = {
-      on_open = patch_zen_bufwinenter,
-    },
   },
 }

@@ -13,7 +13,7 @@
 --     ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
 --   },
 -- }
-vim.opt.ttimeoutlen = 10
+vim.opt.ttimeoutlen = 50
 
 vim.g.lazyvim_picker = "snacks"
 
