@@ -24,7 +24,7 @@ return {
       },
       win = {
         config = function(terminal)
-          terminal.opts.split.width = 0.45
+          terminal.opts.split.width = 0.4
           -- if terminal.tool.name == "codex" then
           --   terminal.opts.split.width = 0.4
           -- elseif terminal.tool.name == "coco" then
@@ -33,9 +33,6 @@ return {
           --   terminal.opts.split.width = 0.4
           -- end
         end,
-        keys = {
-          stopinsert = { "<Esc>", "stopinsert", mode = "t", desc = "Exit Terminal Mode" },
-        },
       },
     },
     nes = { enabled = false },
