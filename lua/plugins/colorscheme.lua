@@ -46,8 +46,18 @@ return {
             FloatBorder = border,
             FloatTitle = { fg = colors.blue, bg = colors.base, bold = true },
             FloatFooter = { fg = colors.overlay1, bg = colors.base },
+            Pmenu = float,
+            PmenuSel = { fg = colors.text, bg = colors.surface0, bold = true },
+            PmenuKind = { fg = colors.blue, bg = colors.base },
+            PmenuExtra = { fg = colors.overlay1, bg = colors.base },
+            PmenuSbar = { bg = colors.base },
+            PmenuThumb = { bg = colors.surface1 },
             StatusLine = { fg = colors.text, bg = colors.base },
             StatusLineNC = { fg = colors.overlay0, bg = colors.base },
+
+            -- Noice 接管的 LSP hover/signature 文档窗口。
+            NoiceLspDoc = { fg = colors.text, bg = colors.base, blend = 0 },
+            NoiceLspDocBorder = { fg = colors.blue, bg = colors.base, blend = 0 },
 
             -- Snacks Picker creates a separate highlight group for every pane.
             SnacksPicker = float,

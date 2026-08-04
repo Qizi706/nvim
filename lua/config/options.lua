@@ -15,6 +15,7 @@
 -- }
 vim.opt.ttimeoutlen = 50
 vim.opt.winborder = "rounded"
+vim.opt.pumblend = 0
 
 vim.g.lazyvim_picker = "snacks"
 vim.g.snacks_animate = false

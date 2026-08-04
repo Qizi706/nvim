@@ -164,6 +164,15 @@ return {
   opts = {
     animate = { enabled = false },
     dashboard = dashboard_config,
+    picker = {
+      layouts = {
+        default = {
+          layout = {
+            backdrop = false,
+          },
+        },
+      },
+    },
     scroll = { enabled = false },
     indent = { enabled = true },
     notifier = { enabled = true },
