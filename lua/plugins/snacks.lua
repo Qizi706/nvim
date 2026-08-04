@@ -1,10 +1,11 @@
 ---@module "snacks"
 
 local dashboard = {
-  glitch = nil,
+  animation = nil,
   timer_id = nil,
   nvim_focused = true,
   logo_color = nil,
+  animation_colors = nil,
 }
 
 function dashboard.calc_logo_width(logo)
@@ -16,8 +17,32 @@ function dashboard.calc_logo_width(logo)
   return width
 end
 
-dashboard.logo = require("config.ui.ascii_arts").Tokamak.original
+dashboard.logo = require("config.ui.ascii_arts").Celeb.original
 dashboard.logo_width = dashboard.calc_logo_width(dashboard.logo)
+
+function dashboard.get_animation_colors()
+  if dashboard.animation_colors ~= nil then
+    return dashboard.animation_colors
+  end
+
+  local ok, palette = pcall(function()
+    return require("catppuccin.palettes").get_palette("mocha")
+  end)
+
+  -- Keep the animation usable while Catppuccin is unavailable or still loading.
+  palette = ok and palette or {
+    sky = "#89dceb",
+    peach = "#fab387",
+    mauve = "#cba6f7",
+  }
+  dashboard.animation_colors = {
+    [0] = palette.sky,
+    [1] = palette.peach,
+    [2] = palette.mauve,
+  }
+
+  return dashboard.animation_colors
+end
 
 function dashboard.header()
   return {
@@ -51,9 +76,9 @@ function dashboard.start_timer()
     return
   end
 
-  dashboard.glitch = dashboard.glitch or require("config.ui.animation").glitch()
+  dashboard.animation = dashboard.animation or require("config.ui.animation").signal()
   dashboard.timer_id = vim.fn.timer_start(32, function()
-    local logo, color = dashboard.glitch()
+    local logo, color = dashboard.animation()
 
     local logo_changed = logo ~= dashboard.logo
     local color_changed = color ~= dashboard.logo_color
@@ -64,11 +89,7 @@ function dashboard.start_timer()
     end
 
     if color_changed then
-      local colors = {
-        [0] = "#30D7FF",
-        [1] = "#FFC060",
-        [2] = "#3000FF",
-      }
+      local colors = dashboard.get_animation_colors()
 
       vim.api.nvim_set_hl(0, "SnacksDashboardLogo", {
         fg = colors[color],

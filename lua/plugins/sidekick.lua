@@ -34,6 +34,9 @@ return {
           -- end
         end,
       },
+      keys = {
+        prompt = false,
+      },
     },
     nes = { enabled = false },
     copilot = {

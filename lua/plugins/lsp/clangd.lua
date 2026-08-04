@@ -1,7 +1,4 @@
 return {
-  keys = {
-    { "<leader>ch", "<cmd>LspClangdSwitchSourceHeader<cr>", desc = "Switch Source/Header (C/C++)" },
-  },
   root_markers = {
     "compile_commands.json",
     "compile_flags.txt",
@@ -14,8 +11,8 @@ return {
     "build.ninja",
     ".git",
     ".clangd",
-    ".clang-tidy",
-    ".clang-format",
+    -- ".clang-tidy",
+    -- ".clang-format",
   },
   capabilities = {
     offsetEncoding = { "utf-16" },
@@ -33,6 +30,6 @@ return {
     usePlaceholders = true,
     completeUnimported = true,
     clangdFileStatus = true,
-    fallbackFlags = { "-std=c++23" },
+    -- fallbackFlags = { "-std=c++23" },
   },
 }

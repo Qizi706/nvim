@@ -1,48 +1,59 @@
 local M = {}
 
-M.glitch = function()
+M.signal = function()
+  local art = require("config.ui.ascii_arts").Celeb
   local stages = {
-    { stage_length = 60, mode = "static" },
-    { stage_length = 10, frame_start = 6, mode = "forward" },
-    { stage_length = 20, mode = "static" },
-    { stage_length = 8, frame_start = 7, mode = "backward" },
+    { ticks = 70 },
   }
-  local original = require("config.ui.ascii_arts").Tokamak.original
-  local frames = require("config.ui.ascii_arts").Tokamak.glitch
-  local curr_stage = 1
+
+  local function add_frame(frame, ticks)
+    stages[#stages + 1] = { ticks = ticks or 3, frame = frame }
+  end
+
+  local function add_original(ticks)
+    stages[#stages + 1] = { ticks = ticks }
+  end
+
+  -- Three ordered signal bursts keep the wordmark readable. Each burst grows
+  -- and reconstructs through adjacent frames, then rests on the original mark
+  -- before the next, stronger transformation begins.
+  add_frame(1)
+  add_frame(2, 4)
+  add_frame(1)
+  add_original(8)
+
+  add_frame(2)
+  add_frame(3)
+  add_frame(4, 4)
+  add_frame(3)
+  add_frame(2)
+  add_original(10)
+
+  add_frame(3)
+  add_frame(4)
+  add_frame(5)
+  add_frame(6, 6)
+  add_frame(5)
+  add_frame(4)
+  add_frame(3)
+  add_original(12)
+
+  local current_stage = 1
   local counter = 0
 
   return function()
-    local curr_frame, curr_color
-    if counter == stages[curr_stage].stage_length then
-      curr_stage = curr_stage + 1
-      if curr_stage > #stages then
-        curr_stage = 1
-      end
-      counter = 0
-    end
-    if stages[curr_stage].mode == "static" then
-      curr_frame = original
-      curr_color = 0
-    else
-      if stages[curr_stage].mode == "forward" then
-        curr_frame = frames[1 + (stages[curr_stage].frame_start + counter) % #frames]
-      elseif stages[curr_stage].mode == "backward" then
-        curr_frame = frames[1 + (stages[curr_stage].frame_start - counter) % #frames]
-      elseif stages[curr_stage].mode == "random" then
-        curr_frame = frames[math.random(#frames)]
-      end
-      local random = math.random()
-      if random < 0.75 then
-        curr_color = 0
-      elseif random < 0.9 then
-        curr_color = 1
-      else
-        curr_color = 2
-      end
-    end
+    local stage = stages[current_stage]
+    local frame = stage.frame and art.frames[stage.frame] or nil
+    local logo = frame and frame.logo or art.original
+    local color = frame and frame.color or 0
+
     counter = counter + 1
-    return curr_frame, curr_color
+    if counter >= stage.ticks then
+      counter = 0
+      current_stage = current_stage % #stages + 1
+    end
+
+    return logo, color
   end
 end
 

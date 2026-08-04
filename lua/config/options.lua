@@ -14,8 +14,10 @@
 --   },
 -- }
 vim.opt.ttimeoutlen = 50
+vim.opt.winborder = "rounded"
 
 vim.g.lazyvim_picker = "snacks"
+vim.g.snacks_animate = false
 
 -- if vim.env.TMUX ~= nil then
 --   local copy = { "tmux", "load-buffer", "-w", "-" }
