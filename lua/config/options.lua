@@ -2,17 +2,6 @@
 -- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
 -- Add any additional options here
 
--- vim.g.clipboard = {
---   name = "OSC 52",
---   copy = {
---     ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
---     ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
---   },
---   paste = {
---     ["+"] = require("vim.ui.clipboard.osc52").paste("+"),
---     ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
---   },
--- }
 vim.opt.ttimeoutlen = 50
 vim.opt.winborder = "rounded"
 vim.opt.pumblend = 0
@@ -20,25 +9,43 @@ vim.opt.pumblend = 0
 vim.g.lazyvim_picker = "snacks"
 vim.g.snacks_animate = false
 
--- if vim.env.TMUX ~= nil then
---   local copy = { "tmux", "load-buffer", "-w", "-" }
---   local paste = { "bash", "-c", "tmux refresh-client -l && sleep 0.05 && tmux save-buffer -" }
---   vim.g.clipboard = {
---     name = "tmux",
---     copy = {
---       ["+"] = copy,
---       ["*"] = copy,
---     },
---     paste = {
---       ["+"] = paste,
---       ["*"] = paste,
---     },
---     cache_enabled = 0,
---   }
--- end
+vim.g.clipboard = {
+  name = "OSC 52",
+  copy = {
+    ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
+    ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
+  },
+  paste = {
+    ["+"] = require("vim.ui.clipboard.osc52").paste("+"),
+    ["*"] = require("vim.ui.clipboard.osc52").paste("*"),
+  },
+}
 
--- LSP Server to use for Python.
--- Set to "basedpyright" to use basedpyright instead of pyright.
-vim.g.lazyvim_python_lsp = "pyright"
--- Set to "ruff_lsp" to use the old LSP implementation version.
-vim.g.lazyvim_python_ruff = "ruff"
+local in_ssh = vim.env.SSH_CONNECTION ~= nil or vim.env.SSH_CLIENT ~= nil or vim.env.SSH_TTY ~= nil
+
+-- Use OSC52 to sync clipboard from a remote SSH Neovim to the local terminal.
+-- Local macOS Neovim keeps using the native pbcopy/pbpaste provider.
+if in_ssh then
+  local osc52 = require("vim.ui.clipboard.osc52")
+
+  vim.g.clipboard = {
+    name = "OSC 52",
+    copy = {
+      ["+"] = osc52.copy("+"),
+      ["*"] = osc52.copy("*"),
+    },
+    paste = {
+      ["+"] = osc52.paste("+"),
+      ["*"] = osc52.paste("*"),
+    },
+  }
+end
+
+vim.api.nvim_create_autocmd("User", {
+  pattern = "VeryLazy",
+  callback = function()
+    vim.schedule(function()
+      vim.opt.clipboard = "unnamedplus"
+    end)
+  end,
+})
