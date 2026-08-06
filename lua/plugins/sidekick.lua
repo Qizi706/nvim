@@ -33,9 +33,9 @@ return {
           --   terminal.opts.split.width = 0.4
           -- end
         end,
-      },
-      keys = {
-        prompt = false,
+        keys = {
+          prompt = false,
+        },
       },
     },
     nes = { enabled = false },
