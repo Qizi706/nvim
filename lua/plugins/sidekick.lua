@@ -4,6 +4,8 @@ return {
     cli = {
       mux = {
         enabled = true,
+        backend = "tmux",
+        create = "terminal",
       },
       tools = {
         -- codex = { is_proc = false },
@@ -35,6 +37,51 @@ return {
         end,
         keys = {
           prompt = false,
+          refresh_scrollback = {
+            "R",
+            function(t)
+              local sb = t.scrollback
+              if not (sb and sb:is_open()) then
+                return
+              end
+
+              local win = t.win
+              if not (win and vim.api.nvim_win_is_valid(win)) then
+                return
+              end
+
+              -- 保存当前位置
+              local view = vim.api.nvim_win_call(win, function()
+                return vim.fn.winsaveview()
+              end)
+
+              -- 不要在按键回调中直接替换当前的只读终端快照。
+              -- 先退出旧快照，再在下一轮事件循环中重新抓取 tmux scrollback。
+              sb.closing = true
+              vim.schedule(function()
+                if not (vim.api.nvim_win_is_valid(win) and sb:is_open()) then
+                  sb.closing = false
+                  return
+                end
+
+                sb:close()
+                vim.schedule(function()
+                  if not vim.api.nvim_win_is_valid(win) then
+                    sb.closing = false
+                    return
+                  end
+
+                  sb:open()
+                  vim.api.nvim_win_call(win, function()
+                    vim.fn.winrestview(view)
+                  end)
+                  sb.closing = false
+                end)
+              end)
+            end,
+            mode = "n",
+            desc = "Refresh tmux scrollback",
+          },
         },
       },
     },
