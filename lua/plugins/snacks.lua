@@ -132,6 +132,29 @@ return {
   priority = 1000,
   lazy = false,
   init = function()
+    if vim.env.TMUX then
+      local ok, extended_keys = pcall(vim.fn.system, { "tmux", "show", "-g", "extended-keys" })
+      local setting = ok and vim.trim(extended_keys):match("(%S+)$") or nil
+
+      -- Snacks only handles `extended-keys on` upstream. `always` has the same
+      -- TermResponse leakage, so resolve the client terminal without probing it.
+      if setting == "on" or setting == "always" then
+        local term_ok, terminal_name = pcall(
+          vim.fn.system,
+          { "tmux", "display-message", "-p", "#{client_termname}" }
+        )
+        terminal_name = term_ok and vim.trim(terminal_name):gsub("^xterm%-", "") or ""
+
+        if terminal_name ~= "" then
+          require("snacks.image.terminal")._terminal = {
+            terminal = terminal_name,
+            version = "",
+            pending = nil,
+          }
+        end
+      end
+    end
+
     vim.api.nvim_create_autocmd("User", {
       pattern = "SnacksDashboardOpened",
       callback = dashboard.update_timer,
