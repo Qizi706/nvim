@@ -1,9 +1,65 @@
+local refresh_state = setmetatable({}, { __mode = "k" })
+
+local function refresh_scrollback(terminal, captured)
+  local sb = terminal.scrollback
+  if not (sb and sb:is_open()) then
+    return
+  end
+
+  local win = terminal.win
+  if not (win and vim.api.nvim_win_is_valid(win)) then
+    return
+  end
+
+  local state = refresh_state[terminal] or {}
+  refresh_state[terminal] = state
+  if state.refreshing then
+    return
+  end
+  state.refreshing = true
+
+  local view = vim.api.nvim_win_call(win, function()
+    return vim.fn.winsaveview()
+  end)
+
+  -- The snapshot is a non-modifiable terminal buffer. Replace it between
+  -- event-loop ticks instead of trying to update it in place.
+  sb.closing = true
+  vim.schedule(function()
+    if not (vim.api.nvim_win_is_valid(win) and sb:is_open()) then
+      sb.closing = false
+      state.refreshing = false
+      return
+    end
+
+    sb:close()
+    vim.schedule(function()
+      if not vim.api.nvim_win_is_valid(win) then
+        sb.closing = false
+        state.refreshing = false
+        return
+      end
+
+      sb:open()
+      vim.api.nvim_win_call(win, function()
+        vim.fn.winrestview(view)
+      end)
+      state.last_dump = captured
+      sb.closing = false
+      state.refreshing = false
+    end)
+  end)
+end
+
+
 return {
   "folke/sidekick.nvim",
   opts = {
     cli = {
       mux = {
         enabled = true,
+        backend = "tmux",
+        create = "terminal",
       },
       tools = {
         -- codex = { is_proc = false },
@@ -58,9 +114,17 @@ return {
           --   terminal.opts.split.width = 0.4
           -- end
         end,
-      },
-      keys = {
-        prompt = false,
+        keys = {
+          prompt = false,
+          refresh_scrollback = {
+            "R",
+            function(t)
+              refresh_scrollback(t)
+            end,
+            mode = "n",
+            desc = "Refresh tmux scrollback",
+          },
+        },
       },
     },
     nes = { enabled = false },
