@@ -49,3 +49,7 @@ vim.api.nvim_create_autocmd("User", {
     end)
   end,
 })
+
+-- Match the Python tools selected on macOS.
+vim.g.lazyvim_python_lsp = "pyright"
+vim.g.lazyvim_python_ruff = "ruff"
