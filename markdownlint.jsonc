@@ -1,0 +1,8 @@
+{
+  // Bare URLs are valid in MDX and angle brackets can change how they render.
+  "MD034": false,
+  // Keep English and Chinese colons at the end of headings.
+  "MD026": {
+    "punctuation": ".,;!。，；！"
+  }
+}
