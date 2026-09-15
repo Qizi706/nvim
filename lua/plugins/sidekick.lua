@@ -37,6 +37,10 @@ return {
         end,
         keys = {
           prompt = false,
+          -- Override LazyVim's global terminal toggle only in Sidekick buffers.
+          -- Some terminals encode Ctrl-/ as Ctrl-_ (ASCII 0x1f).
+          codex_ctrl_slash = { "<c-/>", "<c-/>", mode = "t", desc = "Pass Ctrl-/ to CLI" },
+          codex_ctrl_underscore = { "<c-_>", "<c-_>", mode = "t", desc = "Pass Ctrl-_ to CLI" },
           refresh_scrollback = {
             "R",
             function(t)
